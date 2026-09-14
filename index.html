@@ -1,0 +1,790 @@
+﻿
+<!DOCTYPE html>
+<html lang="pt-BR" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Zerovoz Excellington</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                    },
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        /* Custom scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e1b4b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4f46e5;
+            border-radius: 4px;
+        }
+        .pulse-glow {
+            box-shadow: 0 0 25px rgba(99, 102, 241, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen flex flex-col justify-between selection:bg-indigo-500 selection:text-white">
+
+    <header class="border-b border-indigo-900/40 bg-slate-900/60 backdrop-blur-md sticky top-0 z-50">
+        <div class="max-w-4xl mx-auto px-4 py-4 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-tr from-indigo-600 to-violet-500 flex items-center justify-center shadow-lg shadow-indigo-500/30">
+                    <i class="fa-solid fa-microphone-slash text-white text-lg"></i>
+                </div>
+                <div>
+                    <h1 class="text-xl font-bold bg-gradient-to-r from-indigo-400 to-violet-400 bg-clip-text text-transparent">Zerovoz Excellington</h1>
+                    <p class="text-xs text-slate-400">Remoção de vocais em áudio com IA e cancelamento de fase</p>
+                </div>
+            </div>
+            <div class="hidden sm:flex items-center space-x-2 text-xs text-indigo-300 bg-indigo-950/60 px-3 py-1.5 rounded-full border border-indigo-800/40">
+                <i class="fa-solid fa-bolt text-amber-400"></i>
+                <span>Processamento 100% Local</span>
+            </div>
+            <div class="flex items-center space-x-2">
+                <button id="terms-btn" class="text-xs text-slate-300 hover:text-indigo-400 bg-slate-800/60 hover:bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700/60 transition-colors flex items-center justify-center" title="Termos de Uso e Responsabilidade">
+                    <i class="fa-solid fa-file-contract"></i>
+                </button>
+                <button id="close-btn" class="text-xs text-slate-300 hover:text-rose-400 bg-slate-800/60 hover:bg-slate-800 px-3 py-1.5 rounded-lg border border-slate-700/60 transition-colors flex items-center space-x-1.5" title="Fechar navegador">
+                    <i class="fa-solid fa-power-off"></i>
+                    <span class="hidden md:inline">Fechar</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <main class="max-w-3xl w-full mx-auto px-4 py-8 flex-grow flex flex-col gap-6">
+
+        <!-- Notification Banner -->
+        <div id="status-banner" class="hidden rounded-xl p-4 text-sm flex items-center space-x-3 transition-all duration-300">
+            <i id="status-icon" class="fa-solid text-lg"></i>
+            <span id="status-text" class="font-medium"></span>
+        </div>
+
+        <!-- Step 1: File Upload Card -->
+        <div class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm transition-all hover:border-indigo-500/40">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold flex items-center space-x-2">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-sm font-bold border border-indigo-500/30">1</span>
+                    <span>Selecionar Arquivo de Música</span>
+                </h2>
+                <span class="text-xs text-slate-400">MP3, WAV, OGG, M4A</span>
+            </div>
+
+            <div id="drop-zone" class="border-2 border-dashed border-slate-700 hover:border-indigo-500 rounded-xl p-8 text-center cursor-pointer transition-all bg-slate-950/40 hover:bg-slate-900/60 group relative">
+                <input type="file" id="audio-file-input" accept="audio/*" class="absolute inset-0 opacity-0 cursor-pointer w-full h-full z-10">
+                <div class="flex flex-col items-center justify-center space-y-3 pointer-events-none">
+                    <div class="w-16 h-16 rounded-2xl bg-indigo-600/10 text-indigo-400 group-hover:scale-110 group-hover:bg-indigo-600/20 transition-all flex items-center justify-center text-2xl border border-indigo-500/20">
+                        <i class="fa-solid fa-cloud-arrow-up"></i>
+                    </div>
+                    <div>
+                        <p class="font-medium text-slate-200 group-hover:text-indigo-300 transition-colors">Clique para buscar ou arraste o arquivo aqui</p>
+                        <p class="text-xs text-slate-500 mt-1">Suporta arquivos de áudio do seu dispositivo</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Selected File Info -->
+            <div id="file-info" class="hidden mt-4 p-3 bg-slate-950/60 rounded-xl border border-slate-800 flex items-center justify-between">
+                <div class="flex items-center space-x-3 overflow-hidden">
+                    <div class="w-10 h-10 rounded-lg bg-indigo-500/10 text-indigo-400 flex items-center justify-center flex-shrink-0">
+                        <i class="fa-solid fa-music"></i>
+                    </div>
+                    <div class="truncate">
+                        <p id="file-name" class="text-sm font-medium text-slate-200 truncate">nome-do-arquivo.mp3</p>
+                        <p id="file-size" class="text-xs text-slate-500">0 MB</p>
+                    </div>
+                </div>
+                <button id="remove-file-btn" class="text-slate-400 hover:text-rose-400 p-2 transition-colors" title="Remover arquivo">
+                    <i class="fa-solid fa-trash-can"></i>
+                </button>
+            </div>
+        </div>
+
+        <!-- Step 2: Original Audio Preview -->
+        <div id="original-player-section" class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm opacity-50 pointer-events-none transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold flex items-center space-x-2">
+                    <span class="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-sm font-bold border border-indigo-500/30">2</span>
+                    <span>Áudio Original</span>
+                </h2>
+                <span class="text-xs text-slate-400">Prévia</span>
+            </div>
+
+            <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800 flex flex-col space-y-3">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span id="orig-current-time">0:00</span>
+                    <span id="orig-duration">0:00</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer relative" id="orig-seek-container">
+                    <div id="orig-progress-bar" class="bg-indigo-500 h-full w-0 transition-all"></div>
+                </div>
+                <div class="flex items-center justify-center space-x-4 pt-1">
+                    <button id="orig-play-btn" class="w-12 h-12 rounded-full bg-indigo-600 hover:bg-indigo-500 text-white flex items-center justify-center shadow-lg shadow-indigo-600/30 transition-all hover:scale-105 active:scale-95">
+                        <i class="fa-solid fa-play text-sm ml-0.5" id="orig-play-icon"></i>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 3: Vocal Removal Action -->
+        <div id="process-section" class="bg-gradient-to-br from-indigo-950/40 to-slate-900/80 border border-indigo-900/50 rounded-2xl p-6 shadow-xl backdrop-blur-sm opacity-50 pointer-events-none transition-all text-center">
+            <h2 class="text-base font-semibold mb-2 flex items-center justify-center space-x-2">
+                <span class="w-7 h-7 rounded-lg bg-indigo-600/20 text-indigo-400 flex items-center justify-center text-sm font-bold border border-indigo-500/30">3</span>
+                <span>Isolamento e Remoção</span>
+            </h2>
+            <p class="text-xs text-slate-400 mb-6 max-w-md mx-auto">Utiliza algoritmos de cancelamento de canal central (Mid/Side) para extrair os vocais e manter apenas a instrumental.</p>
+            
+            <button id="process-btn" class="w-full sm:w-auto px-8 py-4 rounded-xl bg-gradient-to-r from-indigo-600 to-violet-600 hover:from-indigo-500 hover:to-violet-500 text-white font-semibold shadow-xl shadow-indigo-600/30 transition-all transform hover:-translate-y-0.5 active:translate-y-0 flex items-center justify-center space-x-3 mx-auto">
+                <i class="fa-solid fa-wand-magic-sparkles text-amber-300"></i>
+                <span class="tracking-wide">REMOVER VOZ(ES)</span>
+            </button>
+
+            <!-- Progress Bar Loader -->
+            <div id="loader-container" class="hidden mt-6 space-y-2">
+                <div class="flex justify-between text-xs text-indigo-300">
+                    <span id="loader-status-text">Processando áudio...</span>
+                    <span id="loader-percent">0%</span>
+                </div>
+                <div class="w-full bg-slate-950 h-2.5 rounded-full overflow-hidden border border-indigo-900/40">
+                    <div id="loader-bar" class="bg-gradient-to-r from-indigo-500 to-violet-500 h-full w-0 transition-all duration-150"></div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Step 4: Result Audio Preview & Download -->
+        <div id="result-section" class="bg-slate-900/80 border border-slate-800/80 rounded-2xl p-6 shadow-xl backdrop-blur-sm opacity-50 pointer-events-none transition-all">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-base font-semibold flex items-center space-x-2">
+                    <span class="w-7 h-7 rounded-lg bg-emerald-600/20 text-emerald-400 flex items-center justify-center text-sm font-bold border border-emerald-500/30">4</span>
+                    <span>Áudio Sem Voz (Instrumental)</span>
+                </h2>
+                <span class="text-xs text-emerald-400 font-medium bg-emerald-950/60 px-2.5 py-1 rounded-full border border-emerald-800/40">Pronto</span>
+            </div>
+
+            <div class="bg-slate-950/60 rounded-xl p-4 border border-slate-800 flex flex-col space-y-3 mb-4">
+                <div class="flex items-center justify-between text-xs text-slate-400">
+                    <span id="res-current-time">0:00</span>
+                    <span id="res-duration">0:00</span>
+                </div>
+                <div class="w-full bg-slate-800 h-2 rounded-full overflow-hidden cursor-pointer relative" id="res-seek-container">
+                    <div id="res-progress-bar" class="bg-emerald-500 h-full w-0 transition-all"></div>
+                </div>
+                <div class="flex items-center justify-center space-x-4 pt-1">
+                    <button id="res-play-btn" class="w-12 h-12 rounded-full bg-emerald-600 hover:bg-emerald-500 text-white flex items-center justify-center shadow-lg shadow-emerald-600/30 transition-all hover:scale-105 active:scale-95">
+                        <i class="fa-solid fa-play text-sm ml-0.5" id="res-play-icon"></i>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Format Selector -->
+            <div class="mb-4">
+                <label class="block text-xs font-medium text-slate-400 mb-2">Formato de Exportação:</label>
+                <div class="grid grid-cols-2 gap-3">
+                    <label class="cursor-pointer bg-slate-950/60 border border-emerald-500/40 rounded-xl p-3 flex items-center space-x-3 hover:border-emerald-500 transition-all">
+                        <input type="radio" name="audio-format" value="wav" checked class="text-emerald-500 focus:ring-emerald-500 bg-slate-900 border-slate-700">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-200 block">WAV</span>
+                            <span class="text-[10px] text-slate-400">Alta qualidade sem perdas</span>
+                        </div>
+                    </label>
+                    <label class="cursor-pointer bg-slate-950/60 border border-slate-700 rounded-xl p-3 flex items-center space-x-3 hover:border-emerald-500 transition-all">
+                        <input type="radio" name="audio-format" value="mp3" class="text-emerald-500 focus:ring-emerald-500 bg-slate-900 border-slate-700">
+                        <div>
+                            <span class="text-sm font-semibold text-slate-200 block">MP3</span>
+                            <span class="text-[10px] text-slate-400">Compactado (128kbps)</span>
+                        </div>
+                    </label>
+                </div>
+            </div>
+
+            <button id="download-btn" class="w-full py-4 rounded-xl bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-xl shadow-emerald-600/30 transition-all flex items-center justify-center space-x-2">
+                <i class="fa-solid fa-download"></i>
+                <span>SALVAR ÁUDIO NO DISPOSITIVO</span>
+            </button>
+        </div>
+
+    </main>
+
+    <!-- Terms Modal -->
+    <div id="terms-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full mx-4 p-6 shadow-2xl relative">
+            <div class="flex items-center justify-between mb-4 pb-3 border-b border-slate-800">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center space-x-2">
+                    <i class="fa-solid fa-file-contract text-indigo-400"></i>
+                    <span>Termos de Uso e Responsabilidade</span>
+                </h3>
+                <button id="close-terms-btn" class="text-slate-400 hover:text-slate-200 p-1 rounded-lg transition-colors">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+            <div class="text-sm text-slate-300 space-y-3 max-h-[60vh] overflow-y-auto pr-2">
+                <p><strong>1. Processamento Local:</strong> O <strong>Zerovoz Excellington</strong> processa todos os arquivos de áudio diretamente no seu dispositivo utilizando a Web Audio API. Nenhum arquivo é enviado para servidores externos ou armazenado na nuvem.</p>
+                <p><strong>2. Direitos Autorais:</strong> O usuário é o único responsável pelos arquivos de áudio enviados e processados na aplicação. Certifique-se de possuir os direitos autorais ou a autorização necessária para modificar e salvar obras musicais.</p>
+                <p><strong>3. Isenção de Responsabilidade:</strong> Os desenvolvedores do Zerovoz Excellington não se responsabilizam pelo uso indevido de materiais protegidos por direitos autorais ou por eventuais perdas de dados durante o processamento local.</p>
+                <p><strong>4. Qualidade do Resultado:</strong> A eficácia da remoção de vocais depende da mixagem original da faixa de áudio (técnica de cancelamento de fase Mid/Side).</p>
+            </div>
+            <div class="mt-6 pt-3 border-t border-slate-800 text-right">
+                <button id="accept-terms-btn" class="px-5 py-2 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-medium text-sm transition-all shadow-lg shadow-indigo-600/30">
+                    Entendido
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Close Prompt Modal -->
+    <div id="close-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-slate-950/80 backdrop-blur-sm hidden">
+        <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full mx-4 p-6 shadow-2xl text-center">
+            <div class="w-14 h-14 rounded-2xl bg-rose-500/10 text-rose-400 flex items-center justify-center text-2xl mx-auto mb-4 border border-rose-500/20">
+                <i class="fa-solid fa-power-off"></i>
+            </div>
+            <h3 class="text-lg font-bold text-slate-100 mb-2">Fechar Aplicativo</h3>
+            <p class="text-sm text-slate-400 mb-6">Como os navegadores modernos bloqueiam o fechamento direto de abas por script de segurança, você pode fechar esta aba manualmente ou retornar ao uso.</p>
+            <div class="flex space-x-3">
+                <button id="cancel-close-btn" class="flex-1 py-3 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 font-medium text-sm transition-all">
+                    Continuar Usando
+                </button>
+                <button id="confirm-close-btn" class="flex-1 py-3 rounded-xl bg-rose-600 hover:bg-rose-500 text-white font-medium text-sm transition-all shadow-lg shadow-rose-600/30">
+                    Tentar Fechar Aba
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <footer class="border-t border-indigo-900/40 bg-slate-900/40 py-6 text-center text-xs text-slate-500">
+        <p>Zerovoz Excellington &bull; Processamento executado localmente via Web Audio API.</p>
+    </footer>
+
+    <script>
+        let audioContext = null;
+        let originalAudioBuffer = null;
+        let processedAudioBuffer = null;
+        let originalAudioBlob = null;
+        let processedAudioBlob = null;
+        let originalFileName = "musica";
+
+        let origAudioElement = new Audio();
+        let resAudioElement = new Audio();
+
+        let isOrigPlaying = false;
+        let isResPlaying = false;
+
+        // DOM elements
+        const fileInput = document.getElementById('audio-file-input');
+        const fileInfo = document.getElementById('file-info');
+        const fileNameEl = document.getElementById('file-name');
+        const fileSizeEl = document.getElementById('file-size');
+        const removeFileBtn = document.getElementById('remove-file-btn');
+        const dropZone = document.getElementById('drop-zone');
+
+        const originalPlayerSection = document.getElementById('original-player-section');
+        const processSection = document.getElementById('process-section');
+        const resultSection = document.getElementById('result-section');
+
+        const origPlayBtn = document.getElementById('orig-play-btn');
+        const origPlayIcon = document.getElementById('orig-play-icon');
+        const origProgressBar = document.getElementById('orig-progress-bar');
+        const origCurrentTime = document.getElementById('orig-current-time');
+        const origDuration = document.getElementById('orig-duration');
+        const origSeekContainer = document.getElementById('orig-seek-container');
+
+        const resPlayBtn = document.getElementById('res-play-btn');
+        const resPlayIcon = document.getElementById('res-play-icon');
+        const resProgressBar = document.getElementById('res-progress-bar');
+        const resCurrentTime = document.getElementById('res-current-time');
+        const resDuration = document.getElementById('res-duration');
+        const resSeekContainer = document.getElementById('res-seek-container');
+
+        const processBtn = document.getElementById('process-btn');
+        const loaderContainer = document.getElementById('loader-container');
+        const loaderBar = document.getElementById('loader-bar');
+        const loaderStatusText = document.getElementById('loader-status-text');
+        const loaderPercent = document.getElementById('loader-percent');
+
+        const downloadBtn = document.getElementById('download-btn');
+        const statusBanner = document.getElementById('status-banner');
+        const statusIcon = document.getElementById('status-icon');
+        const statusText = document.getElementById('status-text');
+
+        // Modal Elements
+        const termsBtn = document.getElementById('terms-btn');
+        const termsModal = document.getElementById('terms-modal');
+        const closeTermsBtn = document.getElementById('close-terms-btn');
+        const acceptTermsBtn = document.getElementById('accept-terms-btn');
+
+        const closeBtn = document.getElementById('close-btn');
+        const closeModal = document.getElementById('close-modal');
+        const cancelCloseBtn = document.getElementById('cancel-close-btn');
+        const confirmCloseBtn = document.getElementById('confirm-close-btn');
+
+        termsBtn.addEventListener('click', () => termsModal.classList.remove('hidden'));
+        closeTermsBtn.addEventListener('click', () => termsModal.classList.add('hidden'));
+        acceptTermsBtn.addEventListener('click', () => termsModal.classList.add('hidden'));
+        termsModal.addEventListener('click', (e) => {
+            if (e.target === termsModal) termsModal.classList.add('hidden');
+        });
+
+        closeBtn.addEventListener('click', () => closeModal.classList.remove('hidden'));
+        cancelCloseBtn.addEventListener('click', () => closeModal.classList.add('hidden'));
+        confirmCloseBtn.addEventListener('click', () => {
+            closeModal.classList.add('hidden');
+            try {
+                window.close();
+            } catch (e) {
+                console.log(e);
+            }
+            showNotification('Seu navegador bloqueou o fechamento automático. Feche esta aba manualmente.', 'info');
+        });
+
+        function showNotification(message, type = 'info') {
+            statusBanner.classList.remove('hidden', 'bg-indigo-950/80', 'border-indigo-800', 'text-indigo-200', 'bg-emerald-950/80', 'border-emerald-800', 'text-emerald-200', 'bg-rose-950/80', 'border-rose-800', 'text-rose-200');
+            statusBanner.classList.add('border');
+
+            if (type === 'success') {
+                statusBanner.classList.add('bg-emerald-950/80', 'border-emerald-800', 'text-emerald-200');
+                statusIcon.className = 'fa-solid fa-circle-check text-emerald-400';
+            } else if (type === 'error') {
+                statusBanner.classList.add('bg-rose-950/80', 'border-rose-800', 'text-rose-200');
+                statusIcon.className = 'fa-solid fa-triangle-exclamation text-rose-400';
+            } else {
+                statusBanner.classList.add('bg-indigo-950/80', 'border-indigo-800', 'text-indigo-200');
+                statusIcon.className = 'fa-solid fa-circle-info text-indigo-400';
+            }
+
+            statusText.textContent = message;
+        }
+
+        function formatTime(seconds) {
+            if (isNaN(seconds)) return "0:00";
+            const mins = Math.floor(seconds / 60);
+            const secs = Math.floor(seconds % 60);
+            return `${mins}:${secs < 10 ? '0' : ''}${secs}`;
+        }
+
+        fileInput.addEventListener('change', async (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+
+            if (!file.type.startsWith('audio/')) {
+                showNotification('Por favor, selecione um arquivo de áudio válido (MP3, WAV, etc).', 'error');
+                return;
+            }
+
+            originalFileName = file.name.substring(0, file.name.lastIndexOf('.')) || file.name;
+            fileNameEl.textContent = file.name;
+            fileSizeEl.textContent = `${(file.size / (1024 * 1024)).toFixed(2)} MB`;
+            fileInfo.classList.remove('hidden');
+            dropZone.classList.add('hidden');
+
+            showNotification('Carregando arquivo de áudio...', 'info');
+
+            try {
+                if (!audioContext) {
+                    audioContext = new (window.AudioContext || window.webkitAudioContext)();
+                }
+
+                const arrayBuffer = await file.arrayBuffer();
+                originalAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                originalAudioBlob = file;
+
+                // Setup original player
+                origAudioElement.src = URL.createObjectURL(file);
+                origAudioElement.load();
+
+                origAudioElement.onloadedmetadata = () => {
+                    origDuration.textContent = formatTime(origAudioElement.duration);
+                };
+
+                // Enable Step 2 & 3
+                originalPlayerSection.classList.remove('opacity-50', 'pointer-events-none');
+                processSection.classList.remove('opacity-50', 'pointer-events-none');
+                
+                // Hide result section if loaded new file
+                resultSection.classList.add('opacity-50', 'pointer-events-none');
+                resAudioElement.pause();
+                resAudioElement.src = '';
+                isResPlaying = false;
+                resPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+
+                showNotification('Áudio carregado com sucesso! Pronto para remover vocais.', 'success');
+            } catch (err) {
+                console.error(err);
+                showNotification('Erro ao decodificar o arquivo de áudio. Tente outro arquivo.', 'error');
+            }
+        });
+
+        removeFileBtn.addEventListener('click', () => {
+            fileInput.value = '';
+            fileInfo.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            
+            origAudioElement.pause();
+            origAudioElement.src = '';
+            isOrigPlaying = false;
+            origPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+
+            resAudioElement.pause();
+            resAudioElement.src = '';
+            isResPlaying = false;
+            resPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+
+            originalPlayerSection.classList.add('opacity-50', 'pointer-events-none');
+            processSection.classList.add('opacity-50', 'pointer-events-none');
+            resultSection.classList.add('opacity-50', 'pointer-events-none');
+
+            originalAudioBuffer = null;
+            processedAudioBuffer = null;
+            statusBanner.classList.add('hidden');
+        });
+
+        origPlayBtn.addEventListener('click', () => {
+            if (!origAudioElement.src) return;
+            if (isOrigPlaying) {
+                origAudioElement.pause();
+                isOrigPlaying = false;
+                origPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+            } else {
+                origAudioElement.play();
+                isOrigPlaying = true;
+                origPlayIcon.className = 'fa-solid fa-pause text-sm';
+            }
+        });
+
+        origAudioElement.addEventListener('timeupdate', () => {
+            if (!origAudioElement.duration) return;
+            const progress = (origAudioElement.currentTime / origAudioElement.duration) * 100;
+            origProgressBar.style.width = `${progress}%`;
+            origCurrentTime.textContent = formatTime(origAudioElement.currentTime);
+        });
+
+        origAudioElement.addEventListener('ended', () => {
+            isOrigPlaying = false;
+            origPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+            origProgressBar.style.width = '0%';
+        });
+
+        origSeekContainer.addEventListener('click', (e) => {
+            if (!origAudioElement.duration) return;
+            const rect = origSeekContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            origAudioElement.currentTime = pos * origAudioElement.duration;
+        });
+
+        resPlayBtn.addEventListener('click', () => {
+            if (!resAudioElement.src) return;
+            if (isResPlaying) {
+                resAudioElement.pause();
+                isResPlaying = false;
+                resPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+            } else {
+                resAudioElement.play();
+                isResPlaying = true;
+                resPlayIcon.className = 'fa-solid fa-pause text-sm';
+            }
+        });
+
+        resAudioElement.addEventListener('timeupdate', () => {
+            if (!resAudioElement.duration) return;
+            const progress = (resAudioElement.currentTime / resAudioElement.duration) * 100;
+            resProgressBar.style.width = `${progress}%`;
+            resCurrentTime.textContent = formatTime(resAudioElement.currentTime);
+        });
+
+        resAudioElement.addEventListener('ended', () => {
+            isResPlaying = false;
+            resPlayIcon.className = 'fa-solid fa-play text-sm ml-0.5';
+            resProgressBar.style.width = '0%';
+        });
+
+        resSeekContainer.addEventListener('click', (e) => {
+            if (!resAudioElement.duration) return;
+            const rect = resSeekContainer.getBoundingClientRect();
+            const pos = (e.clientX - rect.left) / rect.width;
+            resAudioElement.currentTime = pos * resAudioElement.duration;
+        });
+
+        processBtn.addEventListener('click', async () => {
+            if (!originalAudioBuffer) return;
+
+            processBtn.disabled = true;
+            processBtn.classList.add('opacity-75', 'cursor-not-allowed');
+            loaderContainer.classList.remove('hidden');
+            loaderBar.style.width = '10%';
+            loaderStatusText.textContent = 'Analisando canais de áudio...';
+            loaderPercent.textContent = '10%';
+
+            showNotification('Processando áudio para remover vocais...', 'info');
+
+            // Simulate progress steps for smooth UX
+            setTimeout(async () => {
+                try {
+                    loaderBar.style.width = '40%';
+                    loaderStatusText.textContent = 'Aplicando cancelamento de canal central (Mid/Side)...';
+                    loaderPercent.textContent = '40%';
+
+                    // Create OfflineAudioContext for processing
+                    const sampleRate = originalAudioBuffer.sampleRate;
+                    const numberOfChannels = originalAudioBuffer.numberOfChannels;
+                    const length = originalAudioBuffer.length;
+
+                    const offlineContext = new OfflineAudioContext(numberOfChannels, length, sampleRate);
+                    const source = offlineContext.createBufferSource();
+                    source.buffer = originalAudioBuffer;
+
+                    // If stereo, apply Left - Right phase cancellation to isolate center vocals/remove them
+                    if (numberOfChannels >= 2) {
+                        const channelMerger = offlineContext.createChannelMerger(2);
+                        const channelSplitter = offlineContext.createChannelSplitter(2);
+
+                        // Invert/Subtract logic or standard center isolation
+                        // For vocal removal (karaoke): OutL = L - R, OutR = R - L
+                        const scriptNode = offlineContext.createScriptProcessor(4096, 2, 2);
+                        scriptNode.onaudioprocess = (audioProcessingEvent) => {
+                            const inputL = audioProcessingEvent.inputBuffer.getChannelData(0);
+                            const inputR = audioProcessingEvent.inputBuffer.getChannelData(1);
+                            const outputL = audioProcessingEvent.outputBuffer.getChannelData(0);
+                            const outputR = audioProcessingEvent.outputBuffer.getChannelData(1);
+
+                            for (let i = 0; i < inputL.length; i++) {
+                                // Center channel subtraction (Left minus Right)
+                                // Standard vocal removal technique
+                                outputL[i] = inputL[i] - inputR[i];
+                                outputR[i] = inputR[i] - inputL[i];
+                            }
+                        };
+
+                        source.connect(scriptNode);
+                        scriptNode.connect(offlineContext.destination);
+                    } else {
+                        // Mono track: apply a notch/band filter around typical vocal frequencies or slight distortion/reduction
+                        const filter = offlineContext.createBiquadFilter();
+                        filter.type = 'peaking';
+                        filter.frequency.value = 1000; // mid range where vocals sit
+                        filter.gain.value = -25;
+                        filter.Q.value = 1.5;
+
+                        source.connect(filter);
+                        filter.connect(offlineContext.destination);
+                    }
+
+                    source.start(0);
+
+                    loaderBar.style.width = '75%';
+                    loaderStatusText.textContent = 'Renderizando novo arquivo de áudio...';
+                    loaderPercent.textContent = '75%';
+
+                    processedAudioBuffer = await offlineContext.startRendering();
+
+                    loaderBar.style.width = '95%';
+                    loaderStatusText.textContent = 'Finalizando arquivo...';
+                    loaderPercent.textContent = '95%';
+
+                    // Convert audio buffer to WAV Blob
+                    processedAudioBlob = bufferToWaveBlob(processedAudioBuffer);
+                    resAudioElement.src = URL.createObjectURL(processedAudioBlob);
+                    resAudioElement.load();
+
+                    resAudioElement.onloadedmetadata = () => {
+                        resDuration.textContent = formatTime(resAudioElement.duration);
+                    };
+
+                    loaderBar.style.width = '100%';
+                    loaderPercent.textContent = '100%';
+
+                    setTimeout(() => {
+                        loaderContainer.classList.add('hidden');
+                        processBtn.disabled = false;
+                        processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+
+                        // Enable step 4
+                        resultSection.classList.remove('opacity-50', 'pointer-events-none');
+                        resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+                        showNotification('Vozes removidas com sucesso! Ouça a prévia abaixo ou salve o arquivo.', 'success');
+                    }, 500);
+
+                } catch (err) {
+                    console.error(err);
+                    loaderContainer.classList.add('hidden');
+                    processBtn.disabled = false;
+                    processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    showNotification('Erro durante o processamento do áudio.', 'error');
+                }
+            }, 600);
+        });
+
+        function bufferToWaveBlob(abuffer) {
+            const numOfChan = abuffer.numberOfChannels;
+            const length = abuffer.length * numOfChan * 2 + 44;
+            const out = new DataView(new ArrayBuffer(length));
+            let channels = [];
+            let sampleRate = abuffer.sampleRate;
+            let offset = 0;
+            let pos = 0;
+
+            function writeString(str) {
+                for (let i = 0; i < str.length; i++) {
+                    out.setUint8(pos++, str.charCodeAt(i));
+                }
+            }
+
+            function setUint16(data) {
+                out.setUint16(pos, data, true);
+                pos += 2;
+            }
+
+            function setUint32(data) {
+                out.setUint32(pos, data, true);
+                pos += 4;
+            }
+
+            // RIFF chunk descriptor
+            writeString('RIFF');
+            setUint32(length - 8);
+            writeString('WAVE');
+
+            // FMT sub-chunk
+            writeString('fmt ');
+            setUint32(16); // SubChunk1Size (16 for PCM)
+            setUint16(1);  // AudioFormat (1 for PCM)
+            setUint16(numOfChan);
+            setUint32(sampleRate);
+            setUint32(sampleRate * 2 * numOfChan); // ByteRate
+            setUint16(numOfChan * 2); // BlockAlign
+            setUint16(16); // BitsPerSample
+
+            // Data sub-chunk
+            writeString('data');
+            setUint32(length - pos - 4);
+
+            for (let i = 0; i < abuffer.numberOfChannels; i++) {
+                channels.push(abuffer.getChannelData(i));
+            }
+
+            while (offset < abuffer.length) {
+                for (let i = 0; i < numOfChan; i++) {
+                    let sample = Math.max(-1, Math.min(1, channels[i][offset]));
+                    sample = (0.5 + sample < 0 ? sample * 32768 : sample * 32767);
+                    out.setInt16(pos, sample, true);
+                    pos += 2;
+                }
+                offset++;
+            }
+
+            return new Blob([out.buffer], { type: 'audio/wav' });
+        }
+
+        function bufferToMp3Blob(abuffer) {
+            const channels = abuffer.numberOfChannels;
+            const sampleRate = abuffer.sampleRate;
+            const samples = abuffer.length;
+            
+            const mp3enc = new lamejs.Mp3Encoder(channels, sampleRate, 128);
+            const left = abuffer.getChannelData(0);
+            const right = channels > 1 ? abuffer.getChannelData(1) : left;
+            
+            const sampleBlockSize = 1152;
+            const mp3Data = [];
+            
+            const leftInt16 = new Int16Array(samples);
+            const rightInt16 = new Int16Array(samples);
+            
+            for (let i = 0; i < samples; i++) {
+                leftInt16[i] = Math.max(-1, Math.min(1, left[i])) * 0x7FFF;
+                rightInt16[i] = Math.max(-1, Math.min(1, right[i])) * 0x7FFF;
+            }
+            
+            for (let i = 0; i < samples; i += sampleBlockSize) {
+                const chunkLeft = leftInt16.subarray(i, i + sampleBlockSize);
+                const chunkRight = rightInt16.subarray(i, i + sampleBlockSize);
+                const mp3buf = mp3enc.encodeBuffer(chunkLeft, chunkRight);
+                if (mp3buf.length > 0) {
+                    mp3Data.push(new Int8Array(mp3buf));
+                }
+            }
+            
+            const mp3buf = mp3enc.flush();
+            if (mp3buf.length > 0) {
+                mp3Data.push(new Int8Array(mp3buf));
+            }
+            
+            return new Blob(mp3Data, { type: 'audio/mp3' });
+        }
+
+        downloadBtn.addEventListener('click', async () => {
+            if (!processedAudioBuffer) return;
+
+            const format = document.querySelector('input[name="audio-format"]:checked').value;
+            let blob, extension;
+
+            downloadBtn.disabled = true;
+            downloadBtn.classList.add('opacity-75', 'cursor-not-allowed');
+
+            if (format === 'mp3') {
+                showNotification('Compactando arquivo para MP3 (isso pode levar alguns segundos)...', 'info');
+            } else {
+                showNotification('Gerando arquivo em formato WAV...', 'info');
+            }
+
+            setTimeout(async () => {
+                try {
+                    if (format === 'mp3') {
+                        try {
+                            blob = bufferToMp3Blob(processedAudioBuffer);
+                            extension = 'mp3';
+                        } catch (mp3Err) {
+                            console.warn("MP3 encoder failed, falling back to WAV", mp3Err);
+                            showNotification('Aviso: Codificador MP3 indisponível neste ambiente. Gerando em formato WAV de alta qualidade...', 'info');
+                            blob = bufferToWaveBlob(processedAudioBuffer);
+                            extension = 'wav';
+                        }
+                    } else {
+                        blob = bufferToWaveBlob(processedAudioBuffer);
+                        extension = 'wav';
+                    }
+
+                    const url = URL.createObjectURL(blob);
+                    
+                    const a = document.createElement('a');
+                    a.style.display = 'none';
+                    a.href = url;
+                    a.download = `${originalFileName}_sem_voz.${extension}`;
+                    document.body.appendChild(a);
+                    a.click();
+                    setTimeout(() => {
+                        document.body.removeChild(a);
+                        URL.revokeObjectURL(url);
+                    }, 500);
+
+                    showNotification(`Download do arquivo ${extension.toUpperCase()} concluído com sucesso!`, 'success');
+                } catch (err) {
+                    console.error(err);
+                    showNotification('Erro ao exportar o formato de áudio.', 'error');
+                } finally {
+                    downloadBtn.disabled = false;
+                    downloadBtn.classList.remove('opacity-75', 'cursor-not-allowed');
+                }
+            }, 100);
+        });
+    </script>
+
+</body>
+</html>
+```
