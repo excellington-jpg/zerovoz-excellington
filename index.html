@@ -1,4 +1,3 @@
-﻿
 <!DOCTYPE html>
 <html lang="pt-BR" class="dark">
 <head>
@@ -25,7 +24,6 @@
         body {
             font-family: 'Inter', sans-serif;
         }
-        /* Custom scrollbar */
         ::-webkit-scrollbar {
             width: 8px;
         }
@@ -54,22 +52,23 @@
                     <p class="text-xs text-slate-400">Remoção de vocais em áudio.</p>
                 </div>
             </div>
+            
             <div class="hidden sm:flex items-center space-x-2 text-xs text-indigo-300 bg-indigo-950/60 px-3 py-1.5 rounded-full border border-indigo-800/40">
                 <i class="fa-solid fa-bolt text-amber-400"></i>
                 <span>Processamento 100% Local</span>
             </div>
 
-
-            
-
-            
             <div class="flex items-center space-x-2">
+                <div class="flex items-center gap-2 mt-0.5">
+                    <span id="user-display-tag" class="text-xs font-semibold text-indigo-300 hidden"></span>
+                    <button onclick="openUsernameModal()" class="text-[10px] text-indigo-400 hover:text-indigo-300 underline hidden" id="edit-user-btn">Editar</button>
+                </div>
+
                 <!-- Ícone Ativação Pix -->
-                <button onclick="toggleActivationModal()" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 rounded-xl text-xs font-medium border border-slate-800 transition" title="Renovação Mensal Pix">
-                    <i class="fa-solid fa-key"></i>
+                <button onclick="openActivationModal(false)" class="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-emerald-400 rounded-xl text-xs font-medium border border-slate-800 transition" title="Renovação Mensal Pix">
+                    <i class="fa-solid fa-key"></i> Ativação
                 </button>
 
-                
                 <button id="terms-btn" class="text-xs text-slate-300 hover:text-indigo-400 bg-slate-800/60 hover:bg-slate-800 px-2.5 py-1.5 rounded-lg border border-slate-700/60 transition-colors flex items-center justify-center" title="Termos de Uso e Responsabilidade">
                     <i class="fa-solid fa-file-contract"></i>
                 </button>
@@ -80,12 +79,6 @@
             </div>
         </div>
     </header>
-
-        <div class="flex items-center gap-2 mt-0.5">
-                        <span id="user-display-tag" class="text-xs font-semibold text-indigo-300 hidden"></span>
-      <button onclick="openUsernameModal()" class="text-[10px] text-indigo-400 hover:text-indigo-300 underline hidden" id="edit-user-btn">Editar</button>
-     
-    </div>
 
     <main class="max-w-3xl w-full mx-auto px-4 py-8 flex-grow flex flex-col gap-6">
 
@@ -285,8 +278,7 @@
         </div>
     </div>
 
-
-        <!-- MODAL: Cadastro de Usuário -->
+    <!-- MODAL: Cadastro de Usuário -->
     <div id="username-modal" class="hidden fixed inset-0 bg-black/80 z-50 flex items-center justify-center p-4 backdrop-blur-sm">
         <div class="bg-slate-900 border border-slate-800 rounded-3xl p-6 max-w-sm w-full flex flex-col shadow-2xl">
             <h3 class="text-lg font-bold mb-1 text-white flex items-center gap-2">
@@ -314,7 +306,7 @@
                 <h3 class="font-bold text-emerald-400 text-base flex items-center gap-2">
                     <i class="fa-solid fa-heart text-emerald-500"></i> Renovação Mensal Pix
                 </h3>
-                <button onclick="toggleActivationModal()" class="text-slate-400 hover:text-white p-1">
+                <button id="activation-close-btn" onclick="toggleActivationModal()" class="text-slate-400 hover:text-white p-1">
                     <i class="fa-solid fa-xmark text-lg"></i>
                 </button>
             </div>
@@ -344,7 +336,7 @@
             </div>
 
             <div class="space-y-2 pt-1 border-t border-slate-800">
-                <label class="block text-xs font-medium text-slate-300">Código de Ativação (10 dígitos):</label>
+                <label class="block text-xs font-medium text-slate-300">Código de Ativação (Gerado pelo Admin):</label>
                 <input type="text" id="activation-code-input" placeholder="Digite o código de liberação" class="w-full bg-slate-950 border border-slate-800 focus:border-indigo-500 text-white text-xs rounded-lg p-2.5 font-mono outline-none">
                 <button onclick="validateActivationCode()" class="w-full bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs py-2.5 rounded-lg transition-all shadow-md shadow-indigo-600/30">
                     Ativar Aplicativo
@@ -353,22 +345,16 @@
         </div>
     </div>
 
-
-
-    
-
     <footer class="border-t border-indigo-900/40 bg-slate-900/40 py-6 text-center text-xs text-slate-500">
         <p>Zerovoz Excellington &bull; Processamento executado localmente via Web Audio API.</p>
     </footer>
 
     <script>
-
-
-
-                // --- CONSTANTES DE ARMAZENAMENTO E LICENCIAMENTO ---
+        // --- CONSTANTES DE ARMAZENAMENTO E LICENCIAMENTO ---
         const USERNAME_KEY = 'excellington_zerovoz_username_v1';
         const EXPIRATION_KEY = 'excellington_zerovoz_expiration_v1';
         const PIX_KEY = '16250510850';
+        let isAppForcedBlocked = false;
 
         window.addEventListener('DOMContentLoaded', () => {
             checkAppAccess();
@@ -384,7 +370,6 @@
                 return;
             }
 
-            // Exibir nome do usuário abaixo do subtítulo
             const userTag = document.getElementById('user-display-tag');
             const editBtn = document.getElementById('edit-user-btn');
             userTag.textContent = `• Usuário: ${username}`;
@@ -395,7 +380,7 @@
             const now = Date.now();
 
             if (!expiration || now > parseInt(expiration)) {
-                toggleActivationModal();
+                openActivationModal(true); // Bloqueio forçado por expiração
             }
         }
 
@@ -427,10 +412,30 @@
             checkAppAccess();
         }
 
+        function openActivationModal(forced = false) {
+            isAppForcedBlocked = forced;
+            const modal = document.getElementById('activation-modal');
+            const closeBtn = document.getElementById('activation-close-btn');
+            
+            if (closeBtn) {
+                if (forced) {
+                    closeBtn.classList.add('hidden');
+                } else {
+                    closeBtn.classList.remove('hidden');
+                }
+            }
+            modal.classList.remove('hidden');
+            updateActivationInfo();
+        }
+
         function toggleActivationModal() {
+            if (isAppForcedBlocked) return;
             const modal = document.getElementById('activation-modal');
             modal.classList.toggle('hidden');
             if (!modal.classList.contains('hidden')) {
+                isAppForcedBlocked = false;
+                const closeBtn = document.getElementById('activation-close-btn');
+                if (closeBtn) closeBtn.classList.remove('hidden');
                 updateActivationInfo();
             }
         }
@@ -469,34 +474,44 @@
             const cleanName = username.replace(/\s+/g, '');
             const charCount = cleanName.length;
 
-            const targetDate = new Date();
+            const currentExp = localStorage.getItem(EXPIRATION_KEY);
+            const baseDate = (currentExp && parseInt(currentExp) > Date.now()) ? new Date(parseInt(currentExp)) : new Date();
+            
+            const targetDate = new Date(baseDate);
             targetDate.setDate(targetDate.getDate() + 30);
+
             const day = targetDate.getDate();
             const month = targetDate.getMonth() + 1;
             const year = targetDate.getFullYear();
 
             const sum = charCount + day + month + year;
-            const expectedCode = Math.pow(sum, 3).toString().padStart(10, '0');
+            const expectedCode = String(Math.pow(sum, 3)); // Alinhado com o gerador (sem padStart)
 
             if (codeInput === expectedCode || codeInput === "1234567890") {
                 localStorage.setItem(EXPIRATION_KEY, targetDate.getTime().toString());
+                isAppForcedBlocked = false;
                 document.getElementById('activation-modal').classList.add('hidden');
                 alert("Aplicativo ativado com sucesso por mais 30 dias!");
                 checkAppAccess();
             } else {
-                alert("Código de ativação inválido. Verifique o comprovante enviado para excellington@gmail.com.");
+                alert("Código de ativação inválido. Verifique os dados informados.");
             }
+        }
+
+        function checkAccessBeforeAction() {
+            const expiration = localStorage.getItem(EXPIRATION_KEY);
+            const now = Date.now();
+            if (!expiration || now > parseInt(expiration)) {
+                openActivationModal(true);
+                return false;
+            }
+            return true;
         }
 
         function toggleTermsModal() {
             document.getElementById('terms-modal').classList.toggle('hidden');
         }
-        
 
-
-
-
-        
         let audioContext = null;
         let originalAudioBuffer = null;
         let processedAudioBuffer = null;
@@ -510,7 +525,6 @@
         let isOrigPlaying = false;
         let isResPlaying = false;
 
-        // DOM elements
         const fileInput = document.getElementById('audio-file-input');
         const fileInfo = document.getElementById('file-info');
         const fileNameEl = document.getElementById('file-name');
@@ -547,7 +561,6 @@
         const statusIcon = document.getElementById('status-icon');
         const statusText = document.getElementById('status-text');
 
-        // Modal Elements
         const termsBtn = document.getElementById('terms-btn');
         const termsModal = document.getElementById('terms-modal');
         const closeTermsBtn = document.getElementById('close-terms-btn');
@@ -603,6 +616,11 @@
         }
 
         fileInput.addEventListener('change', async (e) => {
+            if (!checkAccessBeforeAction()) {
+                e.target.value = '';
+                return;
+            }
+
             const file = e.target.files[0];
             if (!file) return;
 
@@ -628,7 +646,6 @@
                 originalAudioBuffer = await audioContext.decodeAudioData(arrayBuffer);
                 originalAudioBlob = file;
 
-                // Setup original player
                 origAudioElement.src = URL.createObjectURL(file);
                 origAudioElement.load();
 
@@ -636,11 +653,9 @@
                     origDuration.textContent = formatTime(origAudioElement.duration);
                 };
 
-                // Enable Step 2 & 3
                 originalPlayerSection.classList.remove('opacity-50', 'pointer-events-none');
                 processSection.classList.remove('opacity-50', 'pointer-events-none');
                 
-                // Hide result section if loaded new file
                 resultSection.classList.add('opacity-50', 'pointer-events-none');
                 resAudioElement.pause();
                 resAudioElement.src = '';
@@ -679,6 +694,7 @@
         });
 
         origPlayBtn.addEventListener('click', () => {
+            if (!checkAccessBeforeAction()) return;
             if (!origAudioElement.src) return;
             if (isOrigPlaying) {
                 origAudioElement.pause();
@@ -705,6 +721,7 @@
         });
 
         origSeekContainer.addEventListener('click', (e) => {
+            if (!checkAccessBeforeAction()) return;
             if (!origAudioElement.duration) return;
             const rect = origSeekContainer.getBoundingClientRect();
             const pos = (e.clientX - rect.left) / rect.width;
@@ -712,6 +729,7 @@
         });
 
         resPlayBtn.addEventListener('click', () => {
+            if (!checkAccessBeforeAction()) return;
             if (!resAudioElement.src) return;
             if (isResPlaying) {
                 resAudioElement.pause();
@@ -738,6 +756,7 @@
         });
 
         resSeekContainer.addEventListener('click', (e) => {
+            if (!checkAccessBeforeAction()) return;
             if (!resAudioElement.duration) return;
             const rect = resSeekContainer.getBoundingClientRect();
             const pos = (e.clientX - rect.left) / rect.width;
@@ -745,6 +764,7 @@
         });
 
         processBtn.addEventListener('click', async () => {
+            if (!checkAccessBeforeAction()) return;
             if (!originalAudioBuffer) return;
 
             processBtn.disabled = true;
@@ -756,14 +776,12 @@
 
             showNotification('Processando áudio para remover vocais...', 'info');
 
-            // Simulate progress steps for smooth UX
             setTimeout(async () => {
                 try {
                     loaderBar.style.width = '40%';
                     loaderStatusText.textContent = 'Aplicando cancelamento de canal central (Mid/Side)...';
                     loaderPercent.textContent = '40%';
 
-                    // Create OfflineAudioContext for processing
                     const sampleRate = originalAudioBuffer.sampleRate;
                     const numberOfChannels = originalAudioBuffer.numberOfChannels;
                     const length = originalAudioBuffer.length;
@@ -772,13 +790,7 @@
                     const source = offlineContext.createBufferSource();
                     source.buffer = originalAudioBuffer;
 
-                    // If stereo, apply Left - Right phase cancellation to isolate center vocals/remove them
                     if (numberOfChannels >= 2) {
-                        const channelMerger = offlineContext.createChannelMerger(2);
-                        const channelSplitter = offlineContext.createChannelSplitter(2);
-
-                        // Invert/Subtract logic or standard center isolation
-                        // For vocal removal (karaoke): OutL = L - R, OutR = R - L
                         const scriptNode = offlineContext.createScriptProcessor(4096, 2, 2);
                         scriptNode.onaudioprocess = (audioProcessingEvent) => {
                             const inputL = audioProcessingEvent.inputBuffer.getChannelData(0);
@@ -787,8 +799,6 @@
                             const outputR = audioProcessingEvent.outputBuffer.getChannelData(1);
 
                             for (let i = 0; i < inputL.length; i++) {
-                                // Center channel subtraction (Left minus Right)
-                                // Standard vocal removal technique
                                 outputL[i] = inputL[i] - inputR[i];
                                 outputR[i] = inputR[i] - inputL[i];
                             }
@@ -797,10 +807,9 @@
                         source.connect(scriptNode);
                         scriptNode.connect(offlineContext.destination);
                     } else {
-                        // Mono track: apply a notch/band filter around typical vocal frequencies or slight distortion/reduction
                         const filter = offlineContext.createBiquadFilter();
                         filter.type = 'peaking';
-                        filter.frequency.value = 1000; // mid range where vocals sit
+                        filter.frequency.value = 1000;
                         filter.gain.value = -25;
                         filter.Q.value = 1.5;
 
@@ -820,7 +829,6 @@
                     loaderStatusText.textContent = 'Finalizando arquivo...';
                     loaderPercent.textContent = '95%';
 
-                    // Convert audio buffer to WAV Blob
                     processedAudioBlob = bufferToWaveBlob(processedAudioBuffer);
                     resAudioElement.src = URL.createObjectURL(processedAudioBlob);
                     resAudioElement.load();
@@ -837,7 +845,6 @@
                         processBtn.disabled = false;
                         processBtn.classList.remove('opacity-50', 'cursor-not-allowed');
 
-                        // Enable step 4
                         resultSection.classList.remove('opacity-50', 'pointer-events-none');
                         resultSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
 
@@ -879,22 +886,19 @@
                 pos += 4;
             }
 
-            // RIFF chunk descriptor
             writeString('RIFF');
             setUint32(length - 8);
             writeString('WAVE');
 
-            // FMT sub-chunk
             writeString('fmt ');
-            setUint32(16); // SubChunk1Size (16 for PCM)
-            setUint16(1);  // AudioFormat (1 for PCM)
+            setUint32(16);
+            setUint16(1);
             setUint16(numOfChan);
             setUint32(sampleRate);
-            setUint32(sampleRate * 2 * numOfChan); // ByteRate
-            setUint16(numOfChan * 2); // BlockAlign
-            setUint16(16); // BitsPerSample
+            setUint32(sampleRate * 2 * numOfChan);
+            setUint16(numOfChan * 2);
+            setUint16(16);
 
-            // Data sub-chunk
             writeString('data');
             setUint32(length - pos - 4);
 
@@ -953,6 +957,7 @@
         }
 
         downloadBtn.addEventListener('click', async () => {
+            if (!checkAccessBeforeAction()) return;
             if (!processedAudioBuffer) return;
 
             const format = document.querySelector('input[name="audio-format"]:checked').value;
@@ -1011,4 +1016,3 @@
 
 </body>
 </html>
-```
