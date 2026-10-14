@@ -361,13 +361,24 @@
         });
 
         // --- VALIDAÇÃO DE ACESSO E LICENÇA ---
+        function readStoredExpiration() {
+            const raw = localStorage.getItem(EXPIRATION_KEY);
+            if (raw === null || raw.trim() === '') return null;
+            const numeric = Number(raw);
+            if (Number.isFinite(numeric) && numeric > 0) {
+                return numeric < 100000000000 ? numeric * 1000 : numeric;
+            }
+            const parsed = Date.parse(raw);
+            return Number.isFinite(parsed) ? parsed : null;
+        }
+
         function checkAppAccess() {
             const username = localStorage.getItem(USERNAME_KEY);
             if (!username) {
                 document.getElementById('cancel-username-btn').classList.add('hidden');
                 document.getElementById('register-username-input').value = '';
                 document.getElementById('username-modal').classList.remove('hidden');
-                return;
+                return false;
             }
 
             const userTag = document.getElementById('user-display-tag');
@@ -376,12 +387,15 @@
             userTag.classList.remove('hidden');
             editBtn.classList.remove('hidden');
 
-            const expiration = localStorage.getItem(EXPIRATION_KEY);
+            const expiration = readStoredExpiration();
             const now = Date.now();
 
-            if (!expiration || now > parseInt(expiration)) {
+            if (!expiration || now > expiration) {
                 openActivationModal(true); // Bloqueio forçado por expiração
+                return false;
             }
+
+            return true;
         }
 
         function openUsernameModal() {
@@ -404,9 +418,9 @@
             localStorage.setItem(USERNAME_KEY, nameInput);
             closeUsernameModal();
 
-            if (isFirstTime) {
-                const initialTrial = Date.now() + (30 * 24 * 60 * 60 * 1000); // 30 dias iniciais
-                localStorage.setItem(EXPIRATION_KEY, initialTrial.toString());
+            if (isFirstTime && readStoredExpiration() === null) {
+                const initialTrial = Date.now() + (30 * 24 * 60 * 60 * 1000);
+                localStorage.setItem(EXPIRATION_KEY, String(initialTrial));
             }
 
             checkAppAccess();
@@ -440,20 +454,30 @@
             }
         }
 
+        function getRenewalTargetDate() {
+            const storedExpiration = readStoredExpiration();
+            const baseTime = (storedExpiration !== null && storedExpiration > Date.now()) 
+                ? storedExpiration 
+                : Date.now();
+
+            const targetDate = new Date(baseTime + (30 * 24 * 60 * 60 * 1000));
+            targetDate.setHours(23, 59, 59, 999);
+            return targetDate;
+        }
+
         function updateActivationInfo() {
             const username = localStorage.getItem(USERNAME_KEY) || 'Não cadastrado';
-            document.getElementById('activation-display-username').textContent = username;
+            const userEl = document.getElementById('activation-display-username');
+            if (userEl) userEl.textContent = username;
 
-            const expirationVal = localStorage.getItem(EXPIRATION_KEY);
+            const storedExpiration = readStoredExpiration();
+            const expDate = storedExpiration ? new Date(storedExpiration) : new Date();
+
             const expEl = document.getElementById('activation-display-expiration');
-
-            if (expirationVal) {
-                const expDate = new Date(parseInt(expirationVal));
+            if (expEl) {
                 expEl.textContent = expDate.toLocaleDateString('pt-BR', {
                     day: '2-digit', month: '2-digit', year: 'numeric', hour: '2-digit', minute: '2-digit'
                 });
-            } else {
-                expEl.textContent = 'Não definido';
             }
         }
 
@@ -473,19 +497,14 @@
             const username = localStorage.getItem(USERNAME_KEY) || '';
             const cleanName = username.replace(/\s+/g, '');
             const charCount = cleanName.length;
-
-            const currentExp = localStorage.getItem(EXPIRATION_KEY);
-            const baseDate = (currentExp && parseInt(currentExp) > Date.now()) ? new Date(parseInt(currentExp)) : new Date();
-            
-            const targetDate = new Date(baseDate);
-            targetDate.setDate(targetDate.getDate() + 30);
+            const targetDate = getRenewalTargetDate();
 
             const day = targetDate.getDate();
             const month = targetDate.getMonth() + 1;
             const year = targetDate.getFullYear();
 
             const sum = charCount + day + month + year;
-            const expectedCode = String(Math.pow(sum, 3)); // Alinhado com o gerador (sem padStart)
+            const expectedCode = String(Math.pow(sum, 3));
 
             if (codeInput === expectedCode || codeInput === "1234567890") {
                 localStorage.setItem(EXPIRATION_KEY, targetDate.getTime().toString());
@@ -499,9 +518,9 @@
         }
 
         function checkAccessBeforeAction() {
-            const expiration = localStorage.getItem(EXPIRATION_KEY);
+            const expiration = readStoredExpiration();
             const now = Date.now();
-            if (!expiration || now > parseInt(expiration)) {
+            if (!expiration || now > expiration) {
                 openActivationModal(true);
                 return false;
             }
